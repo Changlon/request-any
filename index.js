@@ -4,8 +4,9 @@
  *  @date    2022-04-06 16:09:58
  */
 
-var axios = require("axios")
-var qs = require("qs")
+
+import axios from "axios" 
+import qs from "qs"
 
 var global = globalThis  
 
@@ -63,4 +64,4 @@ function generateReqAny(reqUrl) {
     return reqAny
 }
 
-module.exports = generateReqAny
+export default generateReqAny

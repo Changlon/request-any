@@ -1,5 +1,5 @@
 {
-  "name": "@changlon/request-any",
+  "name": "request-any",
   "version": "1.0.0",
   "description": "Send interface request across platforms",
   "author": "'Changlon' <'changlong.a2@gmail.com'> (https://github.com/Changlon/)",
@@ -15,6 +15,12 @@
       "import": "./dist/index.mjs"
     }
   },
+  "files": [
+    "dist",
+    "index.d.ts",
+    "index.js",
+    "index.test.js"
+  ],
   "scripts": {
     "build": "tsup index.js --format cjs,esm  --clean",
     "watch": "npm run build -- --watch .",
