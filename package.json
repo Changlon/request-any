@@ -7,21 +7,25 @@
   "repository": "https://github.com/Changlon/request-any",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "types": "index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./index.d.ts",
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
     }
   },
   "scripts": {
-    "build": "tsup index.js --format cjs,esm --dts --clean",
+    "build": "tsup index.js --format cjs,esm  --clean",
     "watch": "npm run build -- --watch .",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "tsup": "5.12.4",
     "typescript": "4.6.3"
+  },
+  "dependencies": {
+    "axios": "0.26.1",
+    "qs": "6.10.3"
   }
 }
