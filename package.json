@@ -1,6 +1,6 @@
 {
   "name": "request-any",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Send interface request across platforms",
   "author": "'Changlon' <'changlong.a2@gmail.com'> (https://github.com/Changlon/)",
   "license": "MIT",
