@@ -7,54 +7,146 @@
 
 import axios from "axios" 
 import qs from "qs"
+import md5 from "js-md5" 
 
 var global = globalThis  
 
-function generateReqAny(reqUrl) {    
+function generateReqAny(reqUrl) {     
+
     let programEnv = ""
     if(global.wx) { programEnv = "mp" }   
     else {programEnv = "other"}   
+    
+    let reqAnyOption = {
+            route : "/" ,
+            data : {},
+            type : "get",
+            json : false ,
+            baseUrl : reqUrl  , 
+            timeout : 2000,
+            headers : {} ,
+            cache : false,
+            expire : ( 1000 * 60 * 60 ) // one hour expire when cache = true 
+    }
 
-    async function reqAny(
-        route = "/" ,
-        data = {},
-        type = "get",
-        json = false ,
-        baseUrl = "" || reqUrl, 
-        timeout = 2000,
-        headers = {} 
-        
-    ) { 
-        let request 
-        type = type.toLowerCase()
-        headers = {
-            "Content-Type": json? "application/json" :"application/x-www-form-urlencoded",
-            ...headers
+    let resMap = new Map() 
+
+    const reqAny = async (
+        option = reqAnyOption
+    ) => {   
+
+        if(option!==reqAnyOption) {
+            let option_ = Object.create(reqAnyOption) 
+            for(let key in option) {
+                option_[key] = option[key] 
+            }
+            option = option_ 
         }
 
+        if(!option.baseUrl) throw new Error(`Parameter baseurl is required !`)
+        
+        let {
+            route,
+            data ,
+            type ,
+            json  ,
+            baseUrl , 
+            timeout ,
+            headers  ,
+            cache ,
+            expire
+
+        } = option
+
+
+        if(cache) {   
+            let currentStr = `baseUrl=${baseUrl || "" }&route=${route}&type=${type}&json=${ json + '' }`   
+            Object.keys(data).forEach(key=>{ 
+                currentStr = currentStr + `&${key}=${data[key]}` 
+            }) 
+            var hashKey = md5(currentStr)   
+            if(resMap.has(hashKey)) { 
+                const {timestamp,expire} = resMap.get(hashKey) 
+                if((timestamp + expire ) >= new Date().getTime()) {
+                    let res = resMap.get(hashKey)
+                    res.cache = true 
+                    return res 
+                }
+            }
+        }
+        
+
+        let request 
+        type = type.toLowerCase()
+        headers["Content-Type"] = 
+             json ? "application/json" :"application/x-www-form-urlencoded"
+     
         if(programEnv === "other") { 
-            request = axios.create({ baseURL : baseUrl || reqAny.baseUrl ,timeout,headers})   
+            let response 
+            request = axios.create({ baseURL : baseUrl,timeout,headers})   
             if(type === "get" || type === "delete" || type === "del") {
                 type = type === "del" ?  "delete" :type 
-                return await request[type](route,{
+                response =  await request[type](route,{
                     headers,
                     data: json ? JSON.stringify(data) : qs.stringify(data)
                 })
+
             }else if(type === "put" || type === "post") {
-                return await request[type](route,json ? JSON.stringify(data) : qs.stringify(data),{
+                response =  await request[type](route,json ? JSON.stringify(data) : qs.stringify(data),{
                     headers
                 })
             }
+
+            if(response.status === 200) { 
+                let resData = response.data 
+                let res = { 
+                    timestamp:new Date().getTime(),
+                    expire, 
+                    cache:false
+                }
+
+                 /* Object */
+                if(typeof resData === "object" && resData.length === undefined) { 
+                    resData.headers = response.headers 
+                    for(let key in  res) {
+                        resData[key] = res[key]
+                    }
+                    res = resData 
+                 /** Array */   
+                } else if(typeof resData === "object" && resData instanceof Array) {
+                    res.data = resData 
+                    res.headers = response.headers 
+                 
+                /** string , number , boolean */ 
+                }else if(typeof resData === "string" || typeof resData === "number" || 
+                        typeof resData === "boolean") { 
+                    res.data = resData 
+                    res.headers = response.headers   
+                }else {
+                    res = response
+                }
+
+                if(cache) resMap.set(hashKey,res)
+                
+                return res 
+
+            }else{
+                throw new Error(`${response.statusText}`) 
+            }
+            
         }else if(programEnv === "mp") {
             request = global.wx.request 
             return new Promise((r,j)=>{
                 request({
-                    url: (baseUrl || reqAny.baseUrl) ? 
-                    `${(baseUrl || reqAny.baseUrl)} ${route.indexOf(0) === '/' ? '/': ''} ${route}` : route,
+                    url: baseUrl ? 
+                    `${ baseUrl }${route.indexOf(0) === '/' ? '/': ''}${route}` : route,
                     data,
                     method:type,
                     header:headers,
-                    success(res){r(res.data)},
+                    success(res){
+                        r(res.data)
+                        if(cache) resMap.set(hashKey,res.data)
+                    },
                     finally(err){j(err)}
                 })
             })
@@ -62,6 +154,8 @@ function generateReqAny(reqUrl) {
     }
 
     return reqAny
+
 }
+
 
 export default generateReqAny
