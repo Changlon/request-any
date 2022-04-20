@@ -1,6 +1,6 @@
 {
   "name": "request-any",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "ESM, CJS cross platform interface request lib",
   "author": "'Changlon' <'changlong.a2@gmail.com'> (https://github.com/Changlon/)",
   "license": "MIT",
@@ -25,7 +25,7 @@
     "build": "tsup index.js --format cjs,esm  --clean",
     "watch": "npm run build -- --watch .",
     "prepublishOnly": "npm run build",
-    "test": "mocha --require babel-register index.test.js -t 25000 "
+    "test": "mocha --require babel-register index.test.js -t 25000 " 
   },
   "devDependencies": {
     "babel-cli": "6.26.0",

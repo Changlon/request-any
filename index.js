@@ -39,9 +39,12 @@ function generateReqAny(option = {
             expire, 
             cache:false
         }
+        // axios -> headers, we.request -> header
+        let headers  =  response.headers || response.header || {} 
          /* Object */
         if(typeof resData === "object" && resData.length === undefined) { 
-            resData.headers = response.headers 
+            
+            resData.headers = headers
             for(let key in  res) {
                 resData[key] = res[key]
             }
@@ -49,19 +52,19 @@ function generateReqAny(option = {
          /** Array */   
         } else if(typeof resData === "object" && resData instanceof Array) {
             res.data = resData 
-            res.headers = response.headers 
-         
+            res.headers = headers
         /** string , number , boolean */ 
         }else if(typeof resData === "string" || typeof resData === "number" || 
                 typeof resData === "boolean") { 
             res.data = resData 
-            res.headers = response.headers   
+            res.headers = headers    
         }else {
             Object.assign(res,response)
         }
 
         return res 
     } 
+
     var resMap = new Map()  
   
     if(global.wx) { programEnv = "mp" }   
@@ -171,16 +174,20 @@ function generateReqAny(option = {
                         method:type,
                         header:headers,
                         success (res){ 
-                            if(res.errno!== 0) {
-                                throw new Error(`request-any Error! errorcode : ${res.errno} errormsg ${res.errmsg} `)
-                            } 
+
+                            if(res.statusCode !== 200) {
+                                throw new Error(`request-any Error! errorcode : ${res.statusCode} errormsg ${res.errMsg} `)
+                            }
+
+                            let response = res 
+ 
                             (async()=>{
                                 /** afterResponse Handler */
-                                await Promise.resolve(afterResponse? afterResponse(response.data,response.headers):()=>{})  
-                                let res_ =  responseHandler(res,expire)  
+                                await Promise.resolve(afterResponse? afterResponse(response.data,response.header):()=>{})  
+                                let res_ =  responseHandler(response,expire)  
                                 res_.hashKey = hashKey  
                                 if(cache) resMap.set(hashKey,res_)
-                                r(res.data)  
+                                r(res_)  
                             })()
                         },
                         finally(err){j(err)}
