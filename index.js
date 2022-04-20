@@ -11,26 +11,62 @@ import md5 from "js-md5"
 
 var global = globalThis  
 
-function generateReqAny(reqUrl) {     
+function generateReqAny(option = {
+    reqUrl  :  "", 
+    beforeRequest  :  (data,headers)=>{}, 
+    afterResponse  :  (data,headers)=>{},
+    debug:false,
+}) {   
+    var {reqUrl,beforeRequest ,afterResponse ,debug } = option 
+    if(!reqUrl) throw new Error(`request-any param reqUrl is required!`) 
+    var programEnv = "" 
+    var reqAnyOption = {
+        route : "/" ,
+        data : {},
+        type : "get",
+        json : false ,
+        baseUrl : reqUrl  , 
+        timeout : 2000,
+        headers : {} ,
+        cache : false,
+        expire : ( 1000 * 60 * 60 ) // one hour expire when cache = true 
+    }
 
-    let programEnv = ""
+    var responseHandler = (response,expire = reqAnyOption.expire) =>{
+        let resData = response.data 
+        let res = { 
+            timestamp:new Date().getTime(),
+            expire, 
+            cache:false
+        }
+         /* Object */
+        if(typeof resData === "object" && resData.length === undefined) { 
+            resData.headers = response.headers 
+            for(let key in  res) {
+                resData[key] = res[key]
+            }
+            res = resData 
+         /** Array */   
+        } else if(typeof resData === "object" && resData instanceof Array) {
+            res.data = resData 
+            res.headers = response.headers 
+         
+        /** string , number , boolean */ 
+        }else if(typeof resData === "string" || typeof resData === "number" || 
+                typeof resData === "boolean") { 
+            res.data = resData 
+            res.headers = response.headers   
+        }else {
+            Object.assign(res,response)
+        }
+
+        return res 
+    } 
+    var resMap = new Map()  
+  
     if(global.wx) { programEnv = "mp" }   
     else {programEnv = "other"}   
     
-    let reqAnyOption = {
-            route : "/" ,
-            data : {},
-            type : "get",
-            json : false ,
-            baseUrl : reqUrl  , 
-            timeout : 2000,
-            headers : {} ,
-            cache : false,
-            expire : ( 1000 * 60 * 60 ) // one hour expire when cache = true 
-    }
-
-    let resMap = new Map() 
-
     const reqAny = async (
         option = reqAnyOption
     ) => {   
@@ -59,12 +95,18 @@ function generateReqAny(reqUrl) {
         } = option
 
 
+        var  hashKey  = md5(new Date().getTime() + "")  
+        
         if(cache) {   
             let currentStr = `baseUrl=${baseUrl || "" }&route=${route}&type=${type}&json=${ json + '' }`   
             Object.keys(data).forEach(key=>{ 
                 currentStr = currentStr + `&${key}=${data[key]}` 
             }) 
-            var hashKey = md5(currentStr)   
+            
+            hashKey = md5(currentStr)  
+
+            if(debug) console.debug(`current request hashKey:`,hashKey) 
+            
             if(resMap.has(hashKey)) { 
                 const {timestamp,expire} = resMap.get(hashKey) 
                 if((timestamp + expire ) >= new Date().getTime()) {
@@ -76,14 +118,22 @@ function generateReqAny(reqUrl) {
         }
         
 
-        let request 
+        var request  
+        var response 
+
         type = type.toLowerCase()
+
         headers["Content-Type"] = 
-             json ? "application/json" :"application/x-www-form-urlencoded"
-     
+             json ? "application/json" :"application/x-www-form-urlencoded" 
+
+         /** beforeRequest Handler */
+        await Promise.resolve(beforeRequest?beforeRequest(data,headers):()=>{})
+
+        if(debug) console.debug(`before-request-headers: `,headers)  
+        
+        /** node  & web js */
         if(programEnv === "other") { 
-            let response 
-            request = axios.create({ baseURL : baseUrl,timeout,headers})   
+            request = axios.create({ baseURL : baseUrl,timeout,headers}) 
             if(type === "get" || type === "delete" || type === "del") {
                 type = type === "del" ?  "delete" :type 
                 response =  await request[type](route,{
@@ -97,65 +147,52 @@ function generateReqAny(reqUrl) {
                 })
             }
 
+              /** afterResponse Handler */
+            await Promise.resolve(afterResponse?afterResponse(response.data,response.headers):()=>{})
+
             if(response.status === 200) { 
-                let resData = response.data 
-                let res = { 
-                    timestamp:new Date().getTime(),
-                    expire, 
-                    cache:false
-                }
-
-                 /* Object */
-                if(typeof resData === "object" && resData.length === undefined) { 
-                    resData.headers = response.headers 
-                    for(let key in  res) {
-                        resData[key] = res[key]
-                    }
-                    res = resData 
-                 /** Array */   
-                } else if(typeof resData === "object" && resData instanceof Array) {
-                    res.data = resData 
-                    res.headers = response.headers 
-                 
-                /** string , number , boolean */ 
-                }else if(typeof resData === "string" || typeof resData === "number" || 
-                        typeof resData === "boolean") { 
-                    res.data = resData 
-                    res.headers = response.headers   
-                }else {
-                    res = response
-                }
-
-                if(cache) resMap.set(hashKey,res)
-                
-                return res 
-
+                let result =  responseHandler(response,expire)   
+                result.hashKey = hashKey 
+                if(cache) resMap.set(hashKey,result) 
+                return result 
             }else{
-                throw new Error(`${response.statusText}`) 
+                throw new Error(`request-any Error!  errorcode : ${response.status} errormsg ${response.statusText}`) 
             }
-            
+        
+        /** weapp */
         }else if(programEnv === "mp") {
             request = global.wx.request 
-            return new Promise((r,j)=>{
-                request({
-                    url: baseUrl ? 
-                    `${ baseUrl }${route.indexOf(0) === '/' ? '/': ''}${route}` : route,
-                    data,
-                    method:type,
-                    header:headers,
-                    success(res){
-                        r(res.data)
-                        if(cache) resMap.set(hashKey,res.data)
-                    },
-                    finally(err){j(err)}
+            if(request) {
+                return new Promise((r,j)=>{
+                    request({
+                        url: baseUrl ? 
+                        `${ baseUrl }${route.indexOf(0) === '/' ? '/': ''}${route}` : route,
+                        data,
+                        method:type,
+                        header:headers,
+                        success (res){ 
+                            if(res.errno!== 0) {
+                                throw new Error(`request-any Error! errorcode : ${res.errno} errormsg ${res.errmsg} `)
+                            } 
+                            (async()=>{
+                                /** afterResponse Handler */
+                                await Promise.resolve(afterResponse? afterResponse(response.data,response.headers):()=>{})  
+                                let res_ =  responseHandler(res,expire)  
+                                res_.hashKey = hashKey  
+                                if(cache) resMap.set(hashKey,res_)
+                                r(res.data)  
+                            })()
+                        },
+                        finally(err){j(err)}
+                    })
                 })
-            })
+            }
+           
         }
     }
 
     return reqAny
 
 }
-
 
 export default generateReqAny

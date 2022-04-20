@@ -1,35 +1,102 @@
 import { expect } from "chai"
-import md5 from "js-md5"  
+import md5 from "js-md5"
 import generateReqAny from "./index.js"  
 
-describe("测试 md5",()=>{ 
+describe("request-any",()=>{  
 
-    const reqAny =  generateReqAny("http://www.baidu.com")   
-    
-    // it("同一字符串加密结果相同",()=>{
-    //     for(let i = 1 ;i<10;++i) {
-    //         console.log(md5(i.toString()))
-    //     }
-    // }) 
+    it("throw Error when generateReqAny called without  param {reqUrl:string} ",()=>{ 
+        expect(()=>{generateReqAny()}).to.throw("request-any param reqUrl is required!")
+    })
+   
+    it("when res data String format",done=>{ 
+        // request a web page  
+        const reqAny = generateReqAny({reqUrl:"http://www.baidu.com"}) 
+        
+        async function t0 () { 
+            const res = await reqAny().catch(err=>{console.log(err);done()}) 
+            expect(res).to.have.property("data")
+            expect(res).to.have.property("timestamp")
+            expect(res).to.have.property("cache")
+            expect(res).to.have.property("expire")
+            let type = typeof res.data
+            expect(type).to.eq("string")
+            done()
+        }
 
-    it("test", done =>{ 
+        t0()
 
-     let res =   reqAny({cache:true}) 
-     res.then(r=>{console.log(r);})
-     .then(()=>reqAny({cache:true}))
-     .then(r=>{console.log(r);done()})
-
-    
-       
-            
     })
 
 
+    it("when res data Json Object format",done=>{ 
+          
+        // request api interface   
+          const reqAny = generateReqAny({reqUrl:"http://cdn.apc.360.cn/index.php?c=WallPaper&a=getAllCategoriesV2&from=360chrome"}) 
+        
+          async function t1 () { 
+              const res = await reqAny().catch(err=>{console.log(err);done()}) 
+              expect(res).to.have.property("data")
+              expect(res).to.have.property("timestamp")
+              expect(res).to.have.property("cache")
+              expect(res).to.have.property("expire")
+              let type = typeof res.data
+              expect(type).to.eq("object")
+              done()
+          }
+  
+          t1()
+
+
+    })
+
+
+    it("should cache data when the request format parameters remain unchanged",done=>{ 
+        // request api interface   
+        const reqAny = generateReqAny({reqUrl:"http://cdn.apc.360.cn/index.php?c=WallPaper&a=getAllCategoriesV2&from=360chrome"}) 
+
+        async function t2 () {  
+            let sleep = async ()=> await  new Promise(r=>{setTimeout(()=>{r()},3000)})
+            let  api  = async ()=> await reqAny({cache:true,expire:1000}).catch(err=>{console.log(err);done()})   
+            let res_1 =  await api()   
+            expect(res_1.cache).to.be.false   
+            let res_2 =  await api()  
+            expect(res_2.cache).to.be.true 
+            await sleep()
+            let res_3 =  await api()  
+            expect(res_3.cache).to.be.false 
+            let res_4 = await api()
+            expect(res_4.cache).to.be.true
+            done()
+        }
+
+        t2()
+
+    })
+
+
+    it("can do something with data & headers before / after request send / back",done=>{ 
+        const sign = md5(new Date().getTime()+ "") 
+        const reqAny = generateReqAny({
+            reqUrl:"http://cdn.apc.360.cn/index.php?c=WallPaper&a=getAllCategoriesV2&from=360chrome" , 
+            beforeRequest:(data,headers)=>{
+                headers["Sign"] = sign
+            },
+            afterResponse:(data,headers) =>{ 
+                data.sign = sign 
+            },
+            debug:true
+        })  
+
+        async function t3 () {  
+            let api  = async ()=> await reqAny({cache:true,expire:1000}).catch(err=>{console.log(err);done()})   
+            let res_1 = await api() 
+            expect(res_1).to.haveOwnProperty("sign")
+            done()
+        }
+
+        t3()
+
+    })
+    
 })
-
-
-
-
-
-
 

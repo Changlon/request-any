@@ -9,12 +9,13 @@ type reqAny = (option:{
     cache?:boolean, 
     expire?:number
 })=> Promise<any> 
-export default function generateReqAny(reqUrl?:string):reqAny 
 
-
-
-
-
+export default function generateReqAny(genOption : { 
+    reqUrl:string,
+    beforeRequest ? : (data,headers)=> any,  
+    afterResponse  ? : (data,headers)=> any ,
+    debug ? :boolean
+}):reqAny 
 
  
 
