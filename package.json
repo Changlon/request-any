@@ -1,6 +1,6 @@
 {
   "name": "request-any",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "ESM, CJS cross platform interface request lib",
   "author": "'Changlon' <'changlong.a2@gmail.com'> (https://github.com/Changlon/)",
   "license": "MIT",

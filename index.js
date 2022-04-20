@@ -179,8 +179,8 @@ function generateReqAny(option = {
                                 throw new Error(`request-any Error! errorcode : ${res.statusCode} errormsg ${res.errMsg} `)
                             }
 
-                            let response = res 
- 
+                            let response = res ; 
+                            
                             (async()=>{
                                 /** afterResponse Handler */
                                 await Promise.resolve(afterResponse? afterResponse(response.data,response.header):()=>{})  
