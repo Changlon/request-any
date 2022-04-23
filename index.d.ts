@@ -11,9 +11,10 @@ type reqAny = (option:{
 })=> Promise<any> 
 
 export default function generateReqAny(genOption : { 
-    reqUrl:string,
-    beforeRequest ? : (data,headers)=> any,  
-    afterResponse  ? : (data,headers)=> any ,
+    reqUrl:string ,
+    beforeRequest ? : (data,headers)=> any ,
+    afterResponse  ? : (data,headers)=> any , 
+    timeout?:number ,
     debug ? :boolean
 }):reqAny 
 

@@ -14,10 +14,11 @@ var global = globalThis
 function generateReqAny(option = {
     reqUrl  :  "", 
     beforeRequest  :  (data,headers)=>{}, 
-    afterResponse  :  (data,headers)=>{},
+    afterResponse  :  (data,headers)=>{}, 
+    timeout:4000,
     debug:false,
 }) {   
-    var {reqUrl,beforeRequest ,afterResponse ,debug } = option 
+    var {reqUrl,beforeRequest ,afterResponse , timeout ,debug } = option  
     if(!reqUrl) throw new Error(`request-any param reqUrl is required!`) 
     var programEnv = "" 
     var reqAnyOption = {
@@ -26,7 +27,7 @@ function generateReqAny(option = {
         type : "get",
         json : false ,
         baseUrl : reqUrl  , 
-        timeout : 2000,
+        timeout : timeout || 3000,
         headers : {} ,
         cache : false,
         expire : ( 1000 * 60 * 60 ) // one hour expire when cache = true 
@@ -74,6 +75,8 @@ function generateReqAny(option = {
         option = reqAnyOption
     ) => {   
 
+        if(debug) console.debug(`request params ${JSON.stringify(option)}`) 
+        
         if(option!==reqAnyOption) {
             let option_ = Object.create(reqAnyOption) 
             for(let key in option) {

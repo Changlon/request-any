@@ -97,6 +97,21 @@ describe("request-any",()=>{
         t3()
 
     })
+
+
+    it("if set timeout at generate Request Function,it will be default",done=>{ 
+        const reqAny = generateReqAny({
+            reqUrl:"http://cdn.apc.360.cn/index.php?c=WallPaper&a=getAllCategoriesV2&from=360chrome" , 
+            debug:true,
+            timeout:5000
+        })  
+
+        reqAny().then(()=>{
+            done()
+        })
+
+    })
+
     
 })
 
