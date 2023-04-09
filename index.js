@@ -8,6 +8,9 @@
 import axios from "axios" 
 import qs from "qs"
 import md5 from "js-md5" 
+import JSONbig from 'json-bigint'
+
+const JSONBigIntStr = JSONbig({ storeAsString: true })
 
 var global = globalThis  
 
@@ -139,12 +142,22 @@ function generateReqAny(option = {
         
         /** node  & web js */
         if(programEnv === "other") { 
-            request = axios.create({ baseURL : baseUrl,timeout,headers}) 
+            request = axios.create({ baseURL : baseUrl,timeout,headers,transformResponse:[function (data) {
+                try {
+                  // 如果数据是 JSON 格式，则使用 JSONbig 进行转换
+                  return JSONBigIntStr.parse(data);
+                } catch (error) {
+                  // 如果无法解析为 JSON，则返回原始数据
+                  return data;
+                }
+              }]})
+
             if(type === "get" || type === "delete" || type === "del") {
                 type = type === "del" ?  "delete" :type 
                 response =  await request[type](route,{
                     headers,
-                    data: json ? JSON.stringify(data) : qs.stringify(data)
+                    data: json ? JSON.stringify(data) : qs.stringify(data),
+                    
                 })
 
             }else if(type === "put" || type === "post") {

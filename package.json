@@ -1,6 +1,6 @@
 {
   "name": "request-any",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "ESM, CJS cross platform interface request lib",
   "author": "'Changlon' <'changlong.a2@gmail.com'> (https://github.com/Changlon/)",
   "license": "MIT",
@@ -38,6 +38,7 @@
   "dependencies": {
     "axios": "0.26.1",
     "js-md5": "0.7.3",
+    "json-bigint": "1.0.0",
     "qs": "6.9.6"
   }
 }
