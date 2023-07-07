@@ -15,10 +15,9 @@ export default function generateReqAny(genOption : {
     beforeRequest ? : (data,headers)=> any ,
     afterResponse  ? : (data,headers)=> any , 
     timeout?:number ,
-    debug ? :boolean
+    debug ? :boolean,
 }):reqAny 
 
  
-
 
  

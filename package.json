@@ -1,18 +1,18 @@
 {
   "name": "request-any",
-  "version": "2.0.5",
-  "description": "ESM, CJS cross platform interface request lib",
+  "version": "2.0.6",
+  "description": "一个跨平台支持ESM,CJS模块的Request请求函数",
   "author": "'Changlon' <'changlong.a2@gmail.com'> (https://github.com/Changlon/)",
   "license": "MIT",
   "repository": "https://github.com/Changlon/request-any",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "module": "./dist/module.js",
   "types": "index.d.ts",
   "exports": {
     ".": {
       "types": "./index.d.ts",
       "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/module.js"
     }
   },
   "files": [
