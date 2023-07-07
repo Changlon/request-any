@@ -1,18 +1,18 @@
 {
   "name": "request-any",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "一个跨平台支持ESM,CJS模块的Request请求函数",
   "author": "'Changlon' <'changlong.a2@gmail.com'> (https://github.com/Changlon/)",
   "license": "MIT",
   "repository": "https://github.com/Changlon/request-any",
-  "main": "./dist/index.js",
-  "module": "./dist/module.js",
+  "main": "./dist/index.main.js",
+  "module": "./dist/index.module.js",
   "types": "index.d.ts",
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/module.js"
+      "require": "./dist/index.main.js",
+      "import": "./dist/index.module.js"
     }
   },
   "files": [
@@ -21,8 +21,9 @@
     "index.js",
     "index.test.js"
   ],
+  
   "scripts": {
-    "build": "tsup index.js --format cjs,esm  --clean",
+    "build": "tsup index.js",
     "watch": "npm run build -- --watch .",
     "prepublishOnly": "npm run build",
     "test": "mocha --require babel-register index.test.js -t 25000 "
